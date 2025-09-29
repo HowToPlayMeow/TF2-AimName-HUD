@@ -12,7 +12,7 @@
 - `sm_tfhud_enable`     `"1"`                   **(Default)** - _TF2HUD AimName (1 = Enable, 0 = Disable)_
 - `sm_tfhud_icon`       `"leaderboard_streak"`  **(Default)** - _HUD Icon_
 - `sm_tfhud_distance`   `"100"`                 **(Default)** - _Distance in Meters_
-- `sm_tfhud_interval`   `"2"`                   **(Default)** - _Check Interval_
+- `sm_tfhud_interval`   `"0.2"`                   **(Default)** - _Check Interval_
 - `sm_tfhud_blockspy`   `"1"`                   **(Default)** - _Block HUD for Spy Class (1 = Enable, 0 = Disable)_
 - `sm_tfhud_hp`         `"0"`                   **(Default)** - _See HP (0 = OFF, 1 = All Teams, 2 = RED Teams, 3 = BLU Teams)_
 
