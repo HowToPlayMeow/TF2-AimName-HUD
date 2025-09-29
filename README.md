@@ -1,6 +1,6 @@
 # Description
 - Aim at Enemy, Their Name Will Appear and Health
-- Some [aimname](https://github.com/Dragonissa/aimnames?tab=readme-ov-file) coaches are used
+- Some [aimname](https://github.com/Dragonissa/aimnames?tab=readme-ov-file) codes are used
  
 ![20250924195831_1](https://github.com/user-attachments/assets/b0d664af-3315-4179-b385-0603dd12da37)
 
