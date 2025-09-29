@@ -19,7 +19,7 @@
 # Small Problems
 - **HUD** will Disappear in **2-3** s.
 - **Spy** Disguised as their Own Team, **HUD** will **Not Work**.
-- **ConVar:** `sm_tfhud_hp` should not be used in **MVM** `(I haven't tested it in MVM, I think it might be a problem).`
+- **ConVar:** `sm_tfhud_hp` should not be used in **MVM** _`(I haven't tested it in MVM, I think it might be a problem).`_
 
 # How To Change Icon
 - Open File - _**...\steamapps\common\Team Fortress 2\tf\tf2_misc_dir.vpk\root\scripts\mod_textures.txt**_
