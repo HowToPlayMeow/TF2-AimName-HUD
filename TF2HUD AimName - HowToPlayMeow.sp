@@ -7,15 +7,7 @@
 #include <tf2_stocks>
 #include <tf2hudmsg>
 
-#define PLUGIN_VERSION "1.0"
-#define TF2_PLAYERCOND_DISGUISING (1<<2)
-#define TF2_PLAYERCOND_DISGUISED  (1<<3)
-#define TF2_PLAYERCOND_SPYCLOAK   (1<<4)
-
-int g_iLastTarget[MAXPLAYERS+1];
-int g_iLastCond[MAXPLAYERS+1];
-float g_fLastHudTime[MAXPLAYERS+1];
-int g_iFilteredEntity = -1;
+#define PLUGIN_VERSION "1.1"
 
 ConVar g_hCvarEnable;
 ConVar g_hCvarIcon;
@@ -30,7 +22,7 @@ float g_fDistance;
 float g_fInterval;
 bool  g_bBlockSpy;
 int   g_iHudHP;
-
+int   g_iFilteredEntity = -1;
 Handle g_hCheckTimer = INVALID_HANDLE;
 
 public Plugin myinfo =
@@ -45,12 +37,12 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
     CreateConVar("sm_tfhud_version", PLUGIN_VERSION, "Version of TF2HUD AimName", FCVAR_NOTIFY | FCVAR_DONTRECORD);
-    g_hCvarEnable   = CreateConVar("sm_tfhud_enable", "1", "TF2HUD AimName (1 = Enable, 0 = Disable)");
-    g_hCvarIcon     = CreateConVar("sm_tfhud_icon", "leaderboard_streak", "HUD Icon");
-    g_hCvarDistance = CreateConVar("sm_tfhud_distance", "100.0", "Distance in Meters");
-    g_hCvarInterval = CreateConVar("sm_tfhud_interval", "0.2", "Check Interval");
-    g_hCvarBlockSpy = CreateConVar("sm_tfhud_blockspy", "1", "Block HUD for Spy Class (1 = Enable, 0 = Disable)");
-    g_hCvarHudHP    = CreateConVar("sm_tfhud_hp", "0", "See HP (0 = OFF, 1 = All Teams, 2 = RED Teams, 3 = BLU Teams)");
+    g_hCvarEnable   = CreateConVar("sm_tfhud_enable", "1", "TF2HUD AimName (1 = Enable, 0 = Disable)", FCVAR_NONE, true, 0.0, true, 1.0);
+    g_hCvarIcon     = CreateConVar("sm_tfhud_icon", "leaderboard_streak", "HUD Icon", FCVAR_NONE);
+    g_hCvarDistance = CreateConVar("sm_tfhud_distance", "100.0", "Distance in Meters", FCVAR_NONE, true, 1.0);
+    g_hCvarInterval = CreateConVar("sm_tfhud_interval", "0.2", "Check Interval", FCVAR_NONE, true, 0.1);
+    g_hCvarBlockSpy = CreateConVar("sm_tfhud_blockspy", "1", "Block HUD for Spy Class (1 = Enable, 0 = Disable)", FCVAR_NONE, true, 0.0, true, 1.0);
+    g_hCvarHudHP    = CreateConVar("sm_tfhud_hp", "0", "See HP (0 = OFF, 1 = All Teams, 2 = RED Teams, 3 = BLU Teams)", FCVAR_NONE, true, 0.0, true, 3.0);
 
     HookEvent("player_spawn", Spawn_SetHP, EventHookMode_Post);
 
@@ -69,41 +61,21 @@ public void OnPluginStart()
     g_iHudHP    = g_hCvarHudHP.IntValue;
 
     g_hCheckTimer = CreateTimer(g_fInterval, TF2_AimName, _, TIMER_REPEAT);
-
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        g_iLastTarget[i]  = -1;
-        g_iLastCond[i]    = 0;
-        g_fLastHudTime[i] = 0.0;
-    }
 }
 
-public void OnClientPutInServer(int client)
-{
-    g_iLastTarget[client]  = -1;
-    g_iLastCond[client]    = 0;
-    g_fLastHudTime[client] = 0.0;
-}
 
-public void OnClientDisconnect(int client)
+bool IsValidClient(int client)
 {
-    g_iLastTarget[client]  = -1;
-    g_iLastCond[client]    = 0;
-    g_fLastHudTime[client] = 0.0;
-}
+    if (client <= 0 || client > MaxClients)
+        return false;
 
-bool IsValidClient(int client, bool allowBots = true)
-{
-    if (client <= 0 || client > MaxClients) return false;
-    if (!IsClientInGame(client)) return false;
-    if (IsClientSourceTV(client) || IsClientReplay(client)) return false;
-    if (!allowBots && IsFakeClient(client)) return false;
+    if (!IsClientInGame(client ) || !IsPlayerAlive(client))
+        return false;
+
+    if (IsClientSourceTV(client) || IsClientReplay(client))
+        return false;
+
     return true;
-}
-
-stock int TF2_GetPlayerCond(int client)
-{
-    return GetEntProp(client, Prop_Send, "m_nPlayerCond");
 }
 
 stock float UnitToMeter(float distance)
@@ -124,7 +96,8 @@ public bool TraceFilter(int ent, int contentMask)
 stock bool CanSeeTarget(int origin, float pos[3], float targetPos[3], float range)
 {
     float fDistance = GetVectorDistanceMeter(pos, targetPos);
-    if (fDistance >= range) return false;
+    if (fDistance >= range) 
+        return false;
 
     g_iFilteredEntity = origin;
     Handle hTrace = TR_TraceRayFilterEx(pos, targetPos, MASK_PLAYERSOLID, RayType_EndPoint, TraceFilter);
@@ -152,7 +125,7 @@ public void OnCvarChanged(ConVar convar, const char[] oldValue, const char[] new
     else if (convar == g_hCvarInterval)
     {
         float newInterval = g_hCvarInterval.FloatValue;
-        if (newInterval > 0.01)
+        if (newInterval > 0.1)
         {
             g_fInterval = newInterval;
 
@@ -176,7 +149,10 @@ public void OnCvarChanged(ConVar convar, const char[] oldValue, const char[] new
         {
             if (IsClientInGame(i) && IsPlayerAlive(i))
             {
-                bool showHP = (g_iHudHP == 1) || (g_iHudHP == 2 && GetClientTeam(i) == view_as<int>(TFTeam_Red)) || (g_iHudHP == 3 && GetClientTeam(i) == view_as<int>(TFTeam_Blue));
+                bool showHP = (g_iHudHP == 1) 
+                || (g_iHudHP == 2 && GetClientTeam(i) == view_as<int>(TFTeam_Red)) 
+                || (g_iHudHP == 3 && GetClientTeam(i) == view_as<int>(TFTeam_Blue));
+
                 SetEntProp(i, Prop_Send, "m_bIsMiniBoss", showHP ? 1 : 0);
             }
         }
@@ -185,25 +161,20 @@ public void OnCvarChanged(ConVar convar, const char[] oldValue, const char[] new
 
 public Action TF2_AimName(Handle timer)
 {
-    if (!g_bHudEnable) return Plugin_Continue;
-
-    float now = GetEngineTime();
+    if (!g_bHudEnable) 
+        return Plugin_Continue;
 
     for (int client = 1; client <= MaxClients; client++)
     {
-        if (!IsValidClient(client, true) || !IsPlayerAlive(client))
+        if (!IsValidClient(client))
             continue;
 
         if (!IsFakeClient(client) && g_bBlockSpy && TF2_GetPlayerClass(client) == TFClass_Spy)
             continue;
 
         int target = GetClientAimTarget(client, false);
-        if (!IsValidClient(target, true) || !IsPlayerAlive(target))
-        {
-            g_iLastTarget[client] = -1;
-            g_iLastCond[client] = 0;
+        if (!IsValidClient(target))
             continue;
-        }
 
         if (GetClientTeam(client) == GetClientTeam(target))
             continue;
@@ -215,25 +186,15 @@ public Action TF2_AimName(Handle timer)
         if (!CanSeeTarget(client, clientPos, targetPos, g_fDistance))
             continue;
 
-        int cond = TF2_GetPlayerCond(target);
-        if (cond & (TF2_PLAYERCOND_DISGUISING | TF2_PLAYERCOND_DISGUISED | TF2_PLAYERCOND_SPYCLOAK))
+        if (TF2_IsPlayerInCondition(target, TFCond_Cloaked) 
+        || TF2_IsPlayerInCondition(target, TFCond_Disguised) 
+        || TF2_IsPlayerInCondition(target, TFCond_Disguising))
             continue;
-
-        // Prevent Spam
-        if (g_iLastTarget[client] == target && g_iLastCond[client] == cond)
-        {
-            if (now - g_fLastHudTime[client] < 2.0)
-                continue;
-        }
 
         char name[MAX_NAME_LENGTH];
         GetClientName(target, name, sizeof(name));
 
         TF2_HudNotificationCustom(client, g_sHudIcon, GetClientTeam(target), true, "%s", name);
-
-        g_iLastTarget[client]  = target;
-        g_iLastCond[client]    = cond;
-        g_fLastHudTime[client] = now;
     }
 
     return Plugin_Continue;
@@ -241,19 +202,23 @@ public Action TF2_AimName(Handle timer)
 
 public void Spawn_SetHP(Event event, const char[] name, bool dontBroadcast)
 {
-    if (g_iHudHP == 0) return;
+    if (g_iHudHP == 0) 
+        return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
-    if (client <= 0 || !IsClientInGame(client)) return;
+    if (client <= 0 || !IsClientInGame(client)) 
+        return;
 
-    CreateTimer(1.0, SetHP, client);
+    CreateTimer(2.0, SetHP, client);
 }
 
 public Action SetHP(Handle timer, any client)
 {
     if (IsClientInGame(client) && IsPlayerAlive(client))
     {
-        bool showHP = (g_iHudHP == 1) || (g_iHudHP == 2 && GetClientTeam(client) == view_as<int>(TFTeam_Red)) || (g_iHudHP == 3 && GetClientTeam(client) == view_as<int>(TFTeam_Blue));
+        bool showHP = (g_iHudHP == 1)
+        || (g_iHudHP == 2 && GetClientTeam(client) == view_as<int>(TFTeam_Red)) 
+        || (g_iHudHP == 3 && GetClientTeam(client) == view_as<int>(TFTeam_Blue));
 
         SetEntProp(client, Prop_Send, "m_bIsMiniBoss", showHP ? 1 : 0);
     }
