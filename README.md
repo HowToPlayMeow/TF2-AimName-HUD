@@ -8,7 +8,7 @@
 - [tf2hudmsg](https://github.com/DosMike/tf2hudmsg)
 
 # ConVar
-- `sm_tfhud_version`   `1.0`                    **(Default)** - _Version of TF2HUD AimName_
+- `sm_tfhud_version`   `"1.1"`                    **(Default)** - _Version of TF2HUD AimName_
 - `sm_tfhud_enable`     `"1"`                   **(Default)** - _TF2HUD AimName (1 = Enable, 0 = Disable)_
 - `sm_tfhud_icon`       `"leaderboard_streak"`  **(Default)** - _HUD Icon_
 - `sm_tfhud_distance`   `"100"`                 **(Default)** - _Distance in Meters_
