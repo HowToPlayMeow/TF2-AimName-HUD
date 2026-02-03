@@ -6,7 +6,7 @@
 ## ConVar
 |Name|Default Value|Description|
 |-|:-:|-|
-|`sm_tfhud_version`|`"1.1"`|Version of TF2HUD AimName|
+|`sm_tfhud_version`|`"2.0"`|Version of TF2HUD AimName|
 |`sm_tfhud_enable`|`"1"`|TF2HUD AimName<br>**(1 = Enable, 0 = Disable)**|
 |`sm_tfhud_icon`|`"leaderboard_streak"`|HUD Icon|
 |`sm_tfhud_distance`|`"100"`|Distance in Meters|
